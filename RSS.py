@@ -9,7 +9,7 @@ import sqlite3
 con = sqlite3.connect('test.db')
 cur = con.cursor()
 
-link = "https://www.webtoons.com/en/slice-of-life/pigminted/rss?title_no=482"
+#link = "https://www.webtoons.com/en/slice-of-life/pigminted/rss?title_no=482"
 
 data = {
     "episode_name": [], "date": [], "episode_link": [], "announcement_check": [], 'series_link': []
@@ -24,6 +24,14 @@ def append_data(arr: dict):
     except Exception as e:
         print("Append Data failed: ", e)
 
+def register_series(guild, series):
+    sql = ''' UPDATE servers
+              SET series = ? ,
+              WHERE id = ?'''
+    cur = con.cursor()
+    cur.execute(sql, series, guild)
+    con.commit()
+
 
 def rectify_link():
     pass
@@ -33,7 +41,11 @@ def get_link():
     pass
 
 
-def check_rss():
+def check_rss(server):
+    sql = """SELECT series FROM servers WHERE id = ?"""
+    cur.execute(sql, server)
+    link = cur.fetchall()
+
     feed = feedparser.parse(link)
     # feed_entries = feed.entries
     for entry in feed.entries:
@@ -52,6 +64,7 @@ def check_rss():
         }
 
         append_data(episode_data)
+
 
     df1 = pd.DataFrame.from_dict(data, orient="index").T
 
@@ -88,4 +101,3 @@ def checkToggle(str):
     ct.to_sql("episodes", con, if_exists='append', index=False)
 
 
-check_rss()

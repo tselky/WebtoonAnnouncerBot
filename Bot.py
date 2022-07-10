@@ -1,3 +1,4 @@
+import asyncio
 import os
 import discord
 import disnake
@@ -5,7 +6,7 @@ from disnake import ChannelType, SelectOption
 from disnake.ext import commands, tasks
 import commands_config
 import config
-from RSS import check_rss, announce, checkToggle
+from RSS import check_rss, announce, checkToggle, register_series
 import sqlite3
 import pandas as pd
 
@@ -20,7 +21,7 @@ cfg = config
 client = commands.Bot(command_prefix=cfg.BOT_PREFIX, test_guilds=[cfg.server_id], activity=disnake.Game(status),
                       status=discord.Status.online)
 
-
+servers = [927053607784808498]
 
 @client.event
 async def on_command_error(ctx, error):
@@ -35,15 +36,31 @@ async def on_ready():
     print(client.user.name, 'is online')
     await webtoon_loop.start()
 
+@client.slash_command()
+async def series(
+        ctx: disnake.ApplicationCommandInteraction,
+        link: str,
+):
+    """
+    Parameters
+    ----------
+    link: The Webtoon RSS
+
+    """
+    ...
+    pass
+    register_series(ctx.guild_id, link)
+
+@client.event
+async def on_guild_join(self, guild):
+    pass
+
 
 @client.slash_command()
 async def ping(ctx):
     ping = int(round(client.latency, 3) * 1000)
     embed = discord.Embed(title="Bot's Ping", description=(f"{ctx.author.display_name} the bot's ping is {ping}ms"))
     await ctx.send(embed=embed)
-
-
-ping = None
 
 
 # Ping command
@@ -72,53 +89,55 @@ async def search(ctx):
 @tasks.loop(seconds=180)
 async def webtoon_loop():
     print('WEBTOON LOOP START')
-    check_rss()
-    announce()
-    for tuple in config.updateList:
-        """
-                Get some useful (or not) information about the bot.
-                """
-        embed = disnake.Embed(
-            # description=  "<@&ROLEID>", #Role id goes here
+    for server in servers:
 
-            color=0x9C84EF
-        )
-        embed.set_author(
-            name=(tuple[1] + " RELEASED!")
-        )
-        embed.add_field(
-            name="Title:",
-            value=tuple[0],
-            inline=True
-        )
-        embed.add_field(
-            name="Date:",
-            value=tuple[2],
-            inline=True
-        )
-        embed.add_field(
-            name="Link",
-            value=(tuple[3]),
-            inline=False
-        )
-        embed.set_footer(
-            # text=
+        check_rss()
+        announce()
+        for tuple in config.updateList:
+            """
+                    Get some useful (or not) information about the bot.
+                    """
+            embed = disnake.Embed(
+                # description=  "<@&ROLEID>", #Role id goes here
 
-        )
+                color=0x9C84EF
+            )
+            embed.set_author(
+                name=(tuple[1] + " RELEASED!")
+            )
+            embed.add_field(
+                name="Title:",
+                value=tuple[0],
+                inline=True
+            )
+            embed.add_field(
+                name="Date:",
+                value=tuple[2],
+                inline=True
+            )
+            embed.add_field(
+                name="Link",
+                value=(tuple[3]),
+                inline=False
+            )
+            embed.set_footer(
+                # text=
 
-        ann_channel = client.get_channel(835060643958358039)
-        thr_channel = client.get_channel(835062639767978014)
-        await ann_channel.send(embed=embed)
+            )
 
-        channel = ann_channel
+            ann_channel = client.get_channel(835060643958358039)
+            thr_channel = client.get_channel(835062639767978014)
+            await ann_channel.send(embed=embed)
 
-        await thr_channel.create_thread(
-            name=tuple[1] + " DISCUSSION THREAD",
-            type=ChannelType.public_thread
-        )
-        str = ''.join(tuple[3])
-        print(str)
-        checkToggle(str)
+            channel = ann_channel
+
+            await thr_channel.create_thread(
+                name=tuple[1] + " DISCUSSION THREAD",
+                type=ChannelType.public_thread
+            )
+            str = ''.join(tuple[3])
+            print(str)
+            checkToggle(str)
 
 
 @client.event
