@@ -1,13 +1,12 @@
 BOT_PREFIX = '!'
 
-channel_id = 927102921211011143 # announcements channel id (developer mode)
+channel_id = ''
 
-server_id = 927053607784808498 # replace with your server's ID, needed for slash commands
+server_id = ''
 
-version = '0.0.5'
+version = ''
 
-ownerid = 163094487315251200 # Your discord ID
-
+ownerid = ''
 
 global updateList
 updateList = []
