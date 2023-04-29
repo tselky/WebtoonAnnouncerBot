@@ -13,6 +13,7 @@
 
 import os
 import disnake
+import discord
 from disnake import ChannelType
 from disnake.ext import commands, tasks
 import commands_config
@@ -41,7 +42,6 @@ async def on_command_error(ctx, error):
 # Displays in terminal that bot is now running
 @client.event
 async def on_ready():
-    server = retrieve_settings()
     print(client.user.name, 'is online')
     await webtoon_loop.start()
 
@@ -66,15 +66,15 @@ async def series(ctx: disnake.ApplicationCommandInteraction,
 
 # Set announcement channel, uses function from RSS.py
 @client.slash_command()
-async def announce(ctx):
-    set_announce(ctx.channel.id, ctx.guild_id)
+async def set_announce_channel(ctx):
+    set_announce(ctx.channel.id)
     await ctx.send("This channel has been set as the announcement channel!")
 
 
 # set thread channel, uses function from RSS.py
 @client.slash_command()
-async def thread(ctx):
-    set_discussion(ctx.channel.id, ctx.guild_id)
+async def set_thread_channel(ctx):
+    set_discussion(ctx.channel.id)
     await ctx.send("This channel has been set as the discussion channel!")
 
 
@@ -103,48 +103,51 @@ async def search(ctx):
 @tasks.loop(seconds=180)
 async def webtoon_loop():
     print('WEBTOON LOOP START')
+    # settings = retrieve_settings()
+    rss_update()
+    announce_list = announce()
+    for details in announce_list:
+        embed = disnake.Embed(
+            # description=  "<@&ROLEID>", #Role id goes here
+            color=0x9C84EF
+        )
+        embed.set_author(
+            name=("EPISODE " + details[3] + " RELEASED!")
+        )
+        embed.add_field(
+            name="Title:",
+            value=details[0],
+            inline=True
+        )
+        embed.add_field(
+            name="Date:",
+            value=details[1],
+            inline=True
+        )
+        embed.add_field(
+            name="Link",
+            value=(details[2]),
+            inline=False
+        )
+        embed.set_footer(
+            # text=
 
-    settings = retrieve_settings()
-    details = rss_post()
-    embed = disnake.Embed(
-        # description=  "<@&ROLEID>", #Role id goes here
+        )
 
-        color=0x9C84EF
-    )
-    embed.set_author(
-        name=("EPISODE " + details[5] + " RELEASED!")
-    )
-    embed.add_field(
-        name="Title:",
-        value=details[0],
-        inline=True
-    )
-    embed.add_field(
-        name="Date:",
-        value=details[1],
-        inline=True
-    )
-    embed.add_field(
-        name="Link",
-        value=(details[2]),
-        inline=False
-    )
-    embed.set_footer(
-        # text=
+        ann_channel = client.get_channel() # settings[2]
+        thr_channel = client.get_channel() # settings [3]
 
-    )
+        # if or match
+        await ann_channel.send(embed=embed)
 
-    ann_channel = client.get_channel(settings[2])
-    thr_channel = client.get_channel(settings[3])
+        channel = ann_channel
 
-    # if or match
-    await ann_channel.send(embed=embed)
+        # if or match
+        await thr_channel.create_thread(
+            name="EPISODE " + details[3] + " DISCUSSION THREAD",
+            type=ChannelType.public_thread
+        )
 
-    # if or match
-    await thr_channel.create_thread(
-        name="EPISODE " + details[5] + " DISCUSSION THREAD",
-        type=ChannelType.public_thread
-    )
 
 
 @client.event

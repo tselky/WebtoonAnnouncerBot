@@ -4,7 +4,7 @@ channel_id = ''
 
 server_id = ''
 
-version = ''
+version = '2.0.0'
 
 ownerid = ''
 
